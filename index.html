@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Valentine's Surprise (interactivo)</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;font-family:Arial,sans-serif}
+  html,body{width:100%;height:100%}
+  body{display:flex;justify-content:center;align-items:center;text-align:center;transition:background 1s;background:linear-gradient(to bottom,#4b0082,#000);overflow:hidden;color:#fff}
+  .section{position:absolute;width:100%;height:100%;display:flex;justify-content:center;align-items:center;flex-direction:column;opacity:0;transition:opacity .4s,transform .4s;transform:scale(.98);pointer-events:none;padding:20px}
+  .section.active{opacity:1;transform:scale(1);z-index:2;pointer-events:auto}
+  .title{font-size:1.6rem;font-weight:600;margin-bottom:12px}
+  .text{font-size:1.05rem;margin-bottom:12px;padding:0 12px;max-width:800px}
+  .btn{padding:10px 20px;margin:8px;border:none;border-radius:10px;cursor:pointer;font-size:1rem;background:#ff6b9a;color:#fff;transition:transform .18s}
+  .btn:hover{transform:scale(1.04)}
+  input[type="password"]{padding:10px;border-radius:10px;border:none;margin-bottom:10px;max-width:260px;text-align:center}
+  .sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
+  .heart{position:absolute;top:100vh;pointer-events:none;z-index:1000;will-change:transform,opacity}
+  @keyframes floatUp{0%{transform:translateY(0) rotate(0deg);opacity:1}100%{transform:translateY(-120vh) rotate(360deg);opacity:.92}}
+  @media (prefers-reduced-motion:reduce){.btn,.heart,.section{animation:none!important;transition:none!important}}
+  @keyframes shake {0%{transform:translateX(0)}16%{transform:translateX(-8px)}33%{transform:translateX(8px)}50%{transform:translateX(-6px)}66%{transform:translateX(6px)}83%{transform:translateX(-3px)}100%{transform:translateX(0)}}
+  .shake{animation:shake .6s ease}
+  .input-error{box-shadow:0 0 0 3px rgba(255,0,50,0.18);border-radius:8px}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="section active" id="login" role="region" aria-label="Login">
+  <div class="title">💖 LOGIN 💖</div>
+  <div class="text">Insere a password para entrar 💜</div>
+  <label for="passwordInput" class="sr-only">Password</label>
+  <input id="passwordInput" type="password" placeholder="Password" aria-label="Password">
+  <button type="button" class="btn" id="btnEntrar">Entrar</button>
+</div>
+
+<!-- DECLARAÇÃO (antes do pedido) -->
+<div class="section" id="miniDecl" role="region" aria-label="Mini declaração" aria-hidden="true">
+  <div class="title">Aquela mensagem fofa que nunca pode faltar 😘</div>
+  <div class="text">
+    És aquela pessoa teimosa que sem perceber ficou no meu coração.  
+    Não prometo perfeição, prometo intensidade, verdade e amor real.  
+    Quero estar contigo nos dias simples e também nos dias difíceis — construir memórias, aprender juntos e rir até doer.  
+    Se aceitares, prometo cuidar, escutar e tentar ser melhor todos os dias 🥺❤️
+  </div>
+  <button type="button" class="btn" id="btnContinuar">Continuar 💌</button>
+</div>
+
+<!-- PEDIDO -->
+<div class="section" id="pedido" role="region" aria-label="Pedido" aria-hidden="true">
+  <div class="title">💖 Pedido 💖</div>
+  <div class="text">Aceitas ser meu amor?</div>
+  <div>
+    <button type="button" class="btn" id="pedidoNao">Não</button>
+    <button type="button" class="btn" id="pedidoSim">Sim</button>
+  </div>
+</div>
+
+<!-- NAO1 -->
+<div class="section" id="nao1" role="region" aria-label="Resposta não 1" aria-hidden="true">
+  <div class="title" id="nao1Title">vamos tentar de novo 🥺</div>
+  <div class="text">😭 💔 Como assim "não"? Queres ser meu amor?</div>
+  <div>
+    <button type="button" class="btn" id="nao1Sim">Sim</button>
+    <button type="button" class="btn" id="nao1Nao">Não</button>
+  </div>
+</div>
+
+<!-- NAO2 -->
+<div class="section" id="nao2" role="region" aria-label="Resposta não 2" aria-hidden="true">
+  <div class="title" id="nao2Title">não vamos desistir 😫</div>
+  <div class="text">🥺 😭 Disseste não outra vez! Queres ser meu namorado?</div>
+  <div>
+    <button type="button" class="btn" id="nao2Sim">Sim</button>
+    <button type="button" class="btn" id="nao2Nao">Não</button>
+  </div>
+</div>
+
+<!-- NAO3 -->
+<div class="section" id="nao3" role="region" aria-label="Resposta não 3" aria-hidden="true">
+  <div class="title">Não me deixaste outra opção</div>
+  <div class="text">😈</div>
+  <div>
+    <button type="button" class="btn" id="simAceito">Sim, aceito</button>
+  </div>
+</div>
+
+<!-- FINAL ACEITE -->
+<div class="section" id="finalAceite" role="region" aria-label="Aceitação final" aria-hidden="true">
+  <div class="title"> Sabia que não ias resistir😁😁</div>
+  <div class="text">! Manda a resposta para o Instagram .</div>
+  <button type="button" class="btn" id="btnInstaFinal">Ir para o Instagram</button>
+</div>
+
+<script>
+/* Corrigido: evita variáveis indefinidas e garante que showSection não lança exceção.
+   Comportamento:
+   - login/miniDecl/pedido/finalAceite: emojis contínuos enquanto a seção estiver ativa
+   - nao1/nao2: burst de emojis por X ms quando a seção aparece
+   - nao3: sequência (sucessão) de 👿 por um período
+*/
+
+const emojisBySection = {
+  login: ['💖','💗','💜'],
+  miniDecl: ['💜','💌','✨'],
+  pedido: ['💗','💞'],
+  nao1: ['😭','💔'],
+  nao2: ['🥺','😭'],
+  nao3: ['👿'], // special sequence handled separately
+  finalAceite: ['🥳','❤️']
+};
+
+let heartsInterval = null;    // interval id for continuous/burst
+let burstTimeout = null;      // timeout to stop burst
+let currentHearts = 0;
+const MAX_HEARTS = 40;
+
+function stopHearts(){
+  if(heartsInterval){ clearInterval(heartsInterval); heartsInterval = null; }
+  if(burstTimeout){ clearTimeout(burstTimeout); burstTimeout = null; }
+}
+
+// cria um emoji flutuante
+function createHeart(emoji, sizeMultiplier = 1){
+  if(currentHearts >= MAX_HEARTS) return;
+  currentHearts++;
+  const el = document.createElement('div');
+  el.className = 'heart';
+  el.textContent = emoji;
+  el.style.left = (Math.random()*90) + 'vw';
+  el.style.fontSize = (Math.random()*1.6 + 0.9)*sizeMultiplier + 'rem';
+  const dur = (3 + Math.random()*4).toFixed(2) + 's';
+  el.style.animation = `floatUp ${dur} linear forwards`;
+  document.body.appendChild(el);
+  setTimeout(()=>{
+    if(el.parentNode) el.parentNode.removeChild(el);
+    currentHearts = Math.max(0, currentHearts-1);
+  }, (parseFloat(dur)*1000) + 600);
+}
+
+// inicia corações contínuos enquanto a seção estiver ativa
+function startContinuous(sectionId, intervalMs = 450){
+  stopHearts();
+  const arr = emojisBySection[sectionId] || [];
+  if(!arr.length) return;
+  heartsInterval = setInterval(()=>{
+    const emoji = arr[Math.floor(Math.random()*arr.length)];
+    createHeart(emoji);
+  }, intervalMs);
+}
+
+// burst: cria emojis repetidamente por durationMs (then stops)
+function startBurst(sectionId, durationMs = 2500, intervalMs = 180){
+  stopHearts();
+  const arr = emojisBySection[sectionId] || [];
+  if(!arr.length) return;
+  heartsInterval = setInterval(()=>{
+    const emoji = arr[Math.floor(Math.random()*arr.length)];
+    createHeart(emoji);
+  }, intervalMs);
+  burstTimeout = setTimeout(()=> stopHearts(), durationMs);
+}
+
+// nao3 special: sequence of 👿 for duration
+function startNono3Sequence(durationMs = 3000, intervalMs = 120){
+  stopHearts();
+  heartsInterval = setInterval(()=> createHeart('👿', 1.2), intervalMs);
+  burstTimeout = setTimeout(()=> stopHearts(), durationMs);
+}
+
+// mostra seção e inicia o comportamento de emojis apropriado
+function showSection(id){
+  stopHearts();
+  document.querySelectorAll('.section').forEach(s=>{
+    const active = s.id === id;
+    s.classList.toggle('active', active);
+    s.setAttribute('aria-hidden', active ? 'false' : 'true');
+  });
+
+  // decidir comportamento
+  if(id === 'login' || id === 'miniDecl' || id === 'pedido' || id === 'finalAceite'){
+    startContinuous(id, 450);
+  } else if(id === 'nao1' || id === 'nao2'){
+    // burst only for a short time
+    startBurst(id, 2800, 160);
+  } else if(id === 'nao3'){
+    startNono3Sequence(3500, 140);
+  }
+
+  // focus management
+  const active = document.getElementById(id);
+  if(active){
+    const focusEl = active.querySelector('input, button, [tabindex]');
+    if(focusEl) focusEl.focus();
+  }
+}
+
+/* shake helper for wrong password */
+function triggerInputError(el){
+  el.classList.add('input-error','shake');
+  setTimeout(()=> el.classList.remove('shake'), 650);
+}
+
+/* listeners */
+window.addEventListener('DOMContentLoaded', ()=>{
+  showSection('login');
+
+  const pwdInput = document.getElementById('passwordInput');
+
+  document.getElementById('btnEntrar').addEventListener('click', checkPassword);
+  pwdInput.addEventListener('keydown', e => { if(e.key === 'Enter') checkPassword(); });
+
+  document.getElementById('btnContinuar').addEventListener('click', ()=> showSection('pedido'));
+  document.getElementById('pedidoNao').addEventListener('click', ()=> showSection('nao1'));
+  document.getElementById('pedidoSim').addEventListener('click', ()=> acceptFinal());
+
+  document.getElementById('nao1Sim').addEventListener('click', ()=> acceptFinal());
+  document.getElementById('nao1Nao').addEventListener('click', ()=> showSection('nao2'));
+
+  document.getElementById('nao2Sim').addEventListener('click', ()=> acceptFinal());
+  document.getElementById('nao2Nao').addEventListener('click', ()=> showSection('nao3'));
+
+  document.getElementById('simAceito').addEventListener('click', ()=> acceptFinal());
+
+  document.getElementById('btnInstaFinal').addEventListener('click', ()=>{
+    window.open('https://instagram.com/direct/inbox/matthewyt27','_blank');
+  });
+});
+
+function checkPassword(){
+  const el = document.getElementById('passwordInput');
+  const pwd = (el.value || '').trim().toLowerCase();
+  if(pwd === 'mateus'){
+    showSection('miniDecl');
+  } else {
+    triggerInputError(el);
+  }
+}
+
+function acceptFinal(){
+  showSection('finalAceite');
+}
+</script>
+
+</body>
+</html>
